@@ -1,0 +1,71 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }} — {{ parent() }}{% endblock %}
+{% set frequency = 5 %}
+{% block content %}
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
+    <p class="lead">The page is refreshed every {{ frequency }} seconds</p>
+    <div class="row">
+        <div class="span12">
+            <h3>All scripts time report</h3>
+            <table id="table-data" class="table table-bordered table-hover table-striped">
+                <tr id="table-header">
+                    <th>Script name</th>
+                    <th><div class="text-right">Requests per sec</div></th>
+                    <th><div class="text-right">Avg execute time, sec</div></th>
+                    <th><div class="text-right">Avg CPU usage</div></th>
+                </tr>
+                {% for page in pages %}
+                    <tr>
+                        <td><a href="#todo" title="">{{ page.script_name }}</a></td>
+                        <td><div class="text-right">{{ page.req_per_sec }}</div></td>
+                        <td><div class="text-right">{{ page.avg_time }}</div></td>
+                        <td><div class="text-right">{{ page.avg_rusage }}</div></td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/html" id="row_tpl">
+        <% for (var i = 0; i < pages.length; i++) { %>
+        <tr style="display: none;">
+            <td><a href="#todo" title=""><%=pages[i].script_name%></a></td>
+            <td><div class="text-right"><%=pages[i].req_per_sec%></div></td>
+            <td><div class="text-right"><%=pages[i].avg_time%></div></td>
+            <td><div class="text-right"><%=pages[i].avg_rusage%></div></td>
+        </tr>
+        <% } %>
+    </script>
+    <script type="text/javascript">
+        $(function() {
+            (function poll(){
+                setTimeout(function(){
+                    $.ajax({
+                        url: "{{ path('scripts_report', { serverName: server_name, hostName: hostname }) }}",
+                        data: {},
+                        success: function(data){
+                            if (typeof data.pages !== undefined && data.pages.length > 0) {
+                                var resHtml = tmpl("row_tpl", { pages: data.pages });
+                                $("#table-data tr:gt(0)").remove();
+                                $('#table-header').after(resHtml);
+                                $('#table-data tr:hidden').show();
+
+                                /*$("#table-data tr:gt(0)").fadeOut('fast', function(){
+                                    $("#table-data tr:gt(0)").remove();
+                                    $('#table-header').after(resHtml);
+                                    $('#table-data tr:hidden').fadeIn('fast');
+                                });*/
+                            }
+
+                            poll();
+                        },
+                        dataType: "json"
+                    });
+                }, {{ frequency * 1000 }});
+            })();
+        });
+    </script>
+{% endblock %}

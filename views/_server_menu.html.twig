@@ -28,6 +28,9 @@
   <li class="{{ (app.request.get('_route') == 'server_statuses') ? 'active' : '' }}">
     <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname }) }}">Statuses</a>
   </li>
+  <li class="{{ (app.request.get('_route') == 'scripts_report') ? 'active' : '' }}">
+    <a href="{{ path('scripts_report', { serverName: server_name, hostName: hostname }) }}">Scripts time report</a>
+  </li>
   <li class="{{ app.request.get('_route') == 'server_live' ? 'active' : '' }}">
     <a href="{{ path('server_live', { serverName: server_name, hostName: hostname }) }}">Live <i class="icon-facetime-video"></i></a>
   </li>

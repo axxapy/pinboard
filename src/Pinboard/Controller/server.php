@@ -895,4 +895,55 @@ function generateOrderBy($colOrder, $colDir, $table) {
     return $orderBy;
 }
 
+$server->get('/{serverName}/{hostName}/scripts_report', function(Request $request, $serverName, $hostName) use ($app, $rowPerPage) {
+    checkUserAccess($app, $serverName);
+
+    $table = $hostName === 'all' ? 'report_by_server_and_script' : 'report_by_hostname_server_and_script';
+    $sql = "
+        SELECT
+            script_name,
+            req_count,
+            req_per_sec,
+            req_time_total,
+            ru_utime_total
+        FROM {$table}
+        WHERE server_name = '{$serverName}'
+        ORDER BY req_count DESC";
+    $dbresult = $app['db']->fetchAll($sql);
+
+    $data = array();
+    foreach ($dbresult as $item) {
+        $data[] = array(
+            'script_name' => $item['script_name'],
+            'req_per_sec' => number_format($item['req_per_sec'], 4, '.', ','),
+            'avg_time'    => number_format($item['req_time_total'] / $item['req_count'], 4, '.', ','),
+            'avg_rusage'  => number_format($item['ru_utime_total'] / $item['req_count'], 4, '.', ','),
+        );
+    }
+
+    if ($request->isXmlHttpRequest()) {
+        $result = array(
+            'pages' => $data,
+        );
+
+        return $app->json($result);
+    }
+
+    $result = array(
+        'server_name' => $serverName,
+        'hostname' => $hostName,
+        'title' => 'Scripts timing',
+        'hosts' => getHosts($app['db'], $serverName),
+        'pages' => $data,
+    );
+
+    //var_dump($data); die;
+    return $app['twig']->render(
+        'scripts-timing.html.twig',
+        $result
+    );
+})
+->value('hostName', 'all')
+->bind('scripts_report');
+
 return $server;
