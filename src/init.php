@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 $app = new Silex\Application();
 $app['params'] = Symfony\Component\Yaml\Yaml::parse(__DIR__.'/../config/parameters.yml');
+$app['debug'] = true;
 
 $app->register(new Silex\Provider\TwigServiceProvider(), array(
     'twig.path' => __DIR__.'/../views',
